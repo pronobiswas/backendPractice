@@ -9,6 +9,7 @@ const _ = Router();
 _.get("/", (req, res) => {
   res.send("hello world");
 });
+// =====speciFideApi======
 _.use('/auth',authRoute);
 _.use('/catagory',catagory);
 

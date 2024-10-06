@@ -9,3 +9,5 @@ const asyncHandeler = (fun = () => {}) => {
     }
   };
 };
+
+module.exports = {asyncHandeler}
