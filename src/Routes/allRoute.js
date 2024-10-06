@@ -1,11 +1,15 @@
 const express = require("express");
 const { Router } = express;
 const { createUserControler } = require("../userControler/userControler.js");
+const authRoute = require("./auth.route.js");
+const catagory = require("../userControler/Catragory.Controler.js");
 const _ = Router();
 
-_.route("/").get((req,res)=>{
-    res.send("oh nice")
+// ======rootApi=======
+_.get("/", (req, res) => {
+  res.send("hello world");
 });
-_.route("/name").get(createUserControler);
+_.use('/auth',authRoute);
+_.use('/catagory',catagory);
 
 module.exports = _;
