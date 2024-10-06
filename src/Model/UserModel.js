@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const UserSchema = new Schema({
+const NewUserSchema = new Schema({
   FirstName: {
     type: "String",
     required: [true, "FirstName missing !!"],
@@ -21,16 +21,11 @@ const UserSchema = new Schema({
   TelePhone: {
     type: "String",
     required: [true, "TelePhone missing or Invalid !!"],
-    max: [13, "max Name size 12 charecter"],
-    min: [10, "Minimun Name size 3 charecter"],
-  },
-  TelePhone: {
-    type: "String",
-    required: [true, "TelePhone missing or Invalid !!"],
+    max: [13, "max Name size 13 charecter"],
+    min: [9, "Minimun Name size 9 charecter"],
   },
   Adress1: {
     type: "String",
-    required: [true, "Adress1 missing or Invalid !!"],
   },
   Adress2: {
     type: "String",
@@ -42,7 +37,7 @@ const UserSchema = new Schema({
   PostCode: {
     type: String,
     trim: true,
-    max: 4,
+    max: [5, "maximum Five charecter"],
   },
   Devision: {
     type: String,
@@ -77,6 +72,6 @@ const UserSchema = new Schema({
   },
 });
 
-const userModel = mongose.model("ExamUsers", UserSchema);
+const NewUserModel = mongoose.model("ExamUsers", NewUserSchema);
 
-module.exports = { userModel };
+module.exports = { NewUserModel };

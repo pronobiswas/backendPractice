@@ -1,22 +1,97 @@
 const { ApiError } = require("../Utils/apiError");
 const { apiResponse } = require("../Utils/apiResponse");
 const { asyncHandeler } = require("../Utils/asyncHandeler");
+const { EamilChecker, PasswordChecker } = require("../Utils/checker");
+const { NewUserModel } = require("../Model/UserModel");
 
 const createUserControler = asyncHandeler(async (req, res) => {
   try {
-    console.log("asyncHandeler kaj kortiche");
-    return res
-        .status(200)
+    // =======Distuct data from body=====
+    const {
+      FirstName,
+      LastName,
+      Email,
+      TelePhone,
+      City,
+      PostCode,
+      Token,
+      Password,
+      Role,
+    } = req.body;
+    // ===========validation=======
+    if (!FirstName) {
+      return res
+        .status(404)
+        .json(new ApiError(false, null, 400, `FirstName Missing !!`));
+    }
+    if (!LastName) {
+      return res
+        .status(404)
+        .json(new ApiError(false, null, 400, `LastName Missing !!`));
+    }
+    if (!TelePhone) {
+      return res
+        .status(404)
+        .json(new ApiError(false, null, 400, `TelePhone Missing !!`));
+    }
+    if (!Email || !EamilChecker(Email)) {
+      return res
+        .status(404)
         .json(
-          new apiResponse(
-            true,
+          new ApiError(
+            false,
             null,
-            200,
-            null,
-            "Registration  sucesfull"
+            400,
+            `Email_Adress Missing or Invalid Eamil  !!`
           )
         );
+    }
+    if (!Password || !PasswordChecker(Password)) {
+      return res
+        .status(404)
+        .json(
+          new ApiError(
+            false,
+            null,
+            400,
+            `Password Missing or Minimum eight characters, at least one uppercase letter, one lowercase letter and one number !!`
+          )
+        );
+    }
+
+    const ExisUser = await NewUserModel.find({
+      $or: [{ Email: Email }, { TelePhone: TelePhone }],
+    });
+    if(ExisUser){
+      return res
+      .status(404)
+      .json(
+        new ApiError(
+          false,
+          null,
+          400,
+          `User alredy exixt !!`
+        )
+      );
+    }
+
+    // create a new users in database
+    const ExamUser = await new NewUserModel({
+      FirstName,
+      LastName,
+      Email,
+      TelePhone,
+      Password: Password,
+    }).save();
+
+    console.log(ExamUser);
     
+    
+    
+
+    return res
+      .status(200)
+      .json(new apiResponse(true, null, 200, null, "Registration  sucesfull"));
   } catch (error) {
     console.log("asyncHandeler Error");
     return res
@@ -29,7 +104,6 @@ const createUserControler = asyncHandeler(async (req, res) => {
           `Registration Controller Error:  ${error} !!`
         )
       );
-
   }
 });
 

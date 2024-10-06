@@ -10,6 +10,6 @@ authRoute.get("/reg", (req, res) => {
   res.send("this is registration");
 });
 
-authRoute.route("/registration").get(createUserControler);
+authRoute.route("/registration").post(createUserControler);
 
 module.exports = authRoute;
