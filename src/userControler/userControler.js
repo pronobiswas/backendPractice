@@ -3,6 +3,8 @@ const { apiResponse } = require("../Utils/apiResponse");
 const { asyncHandeler } = require("../Utils/asyncHandeler");
 const { EamilChecker, PasswordChecker } = require("../Utils/checker");
 const { NewUserModel } = require("../Model/UserModel");
+const { EncodePassword, MakeOTP } = require("../Helpers/helper");
+const { SentMail } = require("../Utils/sentMail");
 
 const createUserControler = asyncHandeler(async (req, res) => {
   try {
@@ -58,11 +60,12 @@ const createUserControler = asyncHandeler(async (req, res) => {
           )
         );
     }
-
+    // ========find user on database isExist!User=====
     const ExisUser = await NewUserModel.find({
       $or: [{ Email: Email }, { TelePhone: TelePhone }],
     });
-    if(ExisUser){
+    // ========return user if Exist=========
+    if(ExisUser?.length){
       return res
       .status(404)
       .json(
@@ -74,17 +77,23 @@ const createUserControler = asyncHandeler(async (req, res) => {
         )
       );
     }
-
+    // ======Encoded password ====
+    const hashpassword =  await EncodePassword(Password);
     // create a new users in database
     const ExamUser = await new NewUserModel({
       FirstName,
       LastName,
       Email,
       TelePhone,
-      Password: Password,
+      Password: hashpassword,
     }).save();
-
-    console.log(ExamUser);
+    // ======generate otp/Make OTP=========
+    const otp = MakeOTP();
+    // =========sent veryfication Mail=========
+    const sentMailInfo = await SentMail(FirstName,Email,otp);
+    console.log(sentMailInfo);
+    
+    
     
     
     
