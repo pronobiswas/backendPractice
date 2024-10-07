@@ -65,20 +65,13 @@ const createUserControler = asyncHandeler(async (req, res) => {
       $or: [{ Email: Email }, { TelePhone: TelePhone }],
     });
     // ========return user if Exist=========
-    if(ExisUser?.length){
+    if (ExisUser?.length) {
       return res
-      .status(404)
-      .json(
-        new ApiError(
-          false,
-          null,
-          400,
-          `User alredy exixt !!`
-        )
-      );
+        .status(404)
+        .json(new ApiError(false, null, 400, `User alredy exixt !!`));
     }
     // ======Encoded password ====
-    const hashpassword =  await EncodePassword(Password);
+    const hashpassword = await EncodePassword(Password);
     // create a new users in database
     const ExamUser = await new NewUserModel({
       FirstName,
@@ -88,19 +81,43 @@ const createUserControler = asyncHandeler(async (req, res) => {
       Password: hashpassword,
     }).save();
     // ======generate otp/Make OTP=========
-    const otp = MakeOTP();
+    const otp = await MakeOTP();
     // =========sent veryfication Mail=========
-    const sentMailInfo = await SentMail(FirstName,Email,otp);
-    console.log(sentMailInfo);
-    
-    
-    
-    
-    
-
+    const sentMailInfo = await SentMail(FirstName, Email, otp);
+    // ========set otp in database=========
+    if (ExamUser || sentMailInfo || otp) {
+      // now set the opt
+      await NewUserModel.findOneAndUpdate(
+        {
+          _id: ExamUser._id,
+        },
+        {
+          $set: { OTP: otp },
+        },
+        {
+          new: true,
+        }
+      );
+    }
+    // =========call/show recent create user=========
+    const recentCreateUser = await NewUserModel.find({
+      $or: [{ TelePhone }, { Email }],
+    }).select("-Password ");
     return res
       .status(200)
-      .json(new apiResponse(true, null, 200, null, "Registration  sucesfull"));
+      .json(
+        new apiResponse(
+          true,
+          recentCreateUser,
+          200,
+          null,
+          "Registration  sucesfull"
+        )
+      );
+
+    // return res
+    //   .status(200)
+    //   .json(new apiResponse(true, null, 200, null, "Registration  sucesfull"));
   } catch (error) {
     console.log("asyncHandeler Error");
     return res

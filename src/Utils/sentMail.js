@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const { ApiError } = require("./apiError");
+const { MakeTemplate } = require("../Helpers/makeTamplate");
 
 const SentMail = async (FirstName, Email, OTP) => {
   try {
@@ -16,7 +17,7 @@ const SentMail = async (FirstName, Email, OTP) => {
       to: `${Email}`, // list of receivers
       subject: "Hello ✔", // Subject line
       text: "Verifiy Massage", // plain text body
-      html: "<b>Hello world?</b>", // html body
+      html: MakeTemplate(FirstName,OTP), // html body
     });
     return info;
   } catch (error) {
