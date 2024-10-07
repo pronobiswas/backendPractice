@@ -3,9 +3,21 @@ const { apiResponse } = require("../Utils/apiResponse");
 const { asyncHandeler } = require("../Utils/asyncHandeler");
 const { EamilChecker, PasswordChecker } = require("../Utils/checker");
 const { NewUserModel } = require("../Model/UserModel");
-const { EncodePassword, MakeOTP } = require("../Helpers/helper");
+const {
+  EncodePassword,
+  MakeOTP,
+  deCodeHashPassword,
+  GenerateAccessToken,
+} = require("../Helpers/helper");
 const { SentMail } = require("../Utils/sentMail");
 
+// ======CookiesOption========
+const options = {
+  httpOnly: true,
+  secure: true,
+};
+
+// ==========regestetion Controler========
 const createUserControler = asyncHandeler(async (req, res) => {
   try {
     // =======Distuct data from body=====
@@ -133,4 +145,129 @@ const createUserControler = asyncHandeler(async (req, res) => {
   }
 });
 
-module.exports = { createUserControler };
+// ============login Controler=============
+const logInControler = async (req, res) => {
+  try {
+    const { Email, Password } = req.body;
+
+    if (!Email || !EamilChecker(Email)) {
+      return res
+        .status(404)
+        .json(
+          new ApiError(
+            false,
+            null,
+            400,
+            `Email_Adress Missing or Invalid Eamil  !!`
+          )
+        );
+    }
+    if (!Password || !PasswordChecker(Password)) {
+      return res
+        .status(404)
+        .json(
+          new ApiError(
+            false,
+            null,
+            400,
+            `Password Missing or Minimum eight characters, at least one uppercase letter, one lowercase letter and one number !!`
+          )
+        );
+    }
+    // ==find User==
+    const FindUser = await NewUserModel.findOne({ Email: Email });
+    // ==password veryfing==
+    const PasswordIsValid = await deCodeHashPassword(
+      Password,
+      FindUser?.Password
+    );
+    // ==========GenerateAccessToken==========
+    const Token = await GenerateAccessToken(Email);
+    // ===========set token in database======
+    if (PasswordIsValid) {
+      await NewUserModel.findOneAndUpdate(
+        {
+          _id: FindUser?._id,
+        },
+        {
+          $set: { Token: Token },
+        },
+        {
+          new: true,
+        }
+      );
+    }
+    // ========recentCreateUser=====
+    const recentCreateUser = await NewUserModel.findOne({
+      Email: Email,
+    }).select("-Password -OTP -Token");
+    // =======set token In cookies=====
+    if (PasswordIsValid) {
+      return res
+        .status(200)
+        .cookie("AccessToken", Token, options)
+        .json(
+          new apiResponse(true, recentCreateUser, 200, null, "login  sucesfull")
+        );
+    }
+  } catch (error) {
+    console.log(`logIn Controler Error : ${error}`);
+    return res
+      .status(404)
+      .json(
+        new ApiError(
+          false,
+          null,
+          400,
+          `logInControler Controller Error:  ${error} !!`
+        )
+      );
+  }
+};
+
+// ========OTP Controler========
+const MatchOTPcontroler = async (req, res) => {
+  try {
+    const { Email, OTP } = req.body;
+    // =======validation=====
+    if (!Email || !OTP) {
+      return res
+        .status(404)
+        .json(
+          new ApiError(
+            false,
+            null,
+            400,
+            `Email_Adress Missing or Invalid OTP  !!`
+          )
+        );
+    }
+    // ============Checking User=========
+    const ExistUser = await NewUserModel.findOne({
+      $or: [{ Email: Email }, { OTP: OTP }],
+    });
+    // ============matching  OTP==========
+    if (OTP == ExistUser.OTP) {
+      ExistUser.OTP = null;
+      await ExistUser.save();
+      return res
+        .status(200)
+        .json(new apiResponse(true, 200, null, "OTP veryfied"));
+    } else {
+      console.log("match kori nai");
+      return res
+        .status(404)
+        .json(new ApiError(false, null, 400, `OTP Doesn't Match!!`));
+    }
+    
+  } catch (error) {
+    console.log(`OTP Controler Error : ${error}`);
+    return res
+      .status(404)
+      .json(
+        new ApiError(false, null, 400, `OTP Controller Error:  ${error} !!`)
+      );
+  }
+};
+
+module.exports = { createUserControler, logInControler, MatchOTPcontroler };

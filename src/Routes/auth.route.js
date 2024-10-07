@@ -1,5 +1,9 @@
 const express = require("express");
-const { createUserControler } = require("../userControler/userControler");
+const { 
+  createUserControler,
+  logInControler,
+  MatchOTPcontroler
+ } = require("../userControler/userControler");
 const { Router } = express;
 const authRoute = Router();
 
@@ -11,5 +15,7 @@ authRoute.get("/reg", (req, res) => {
 });
 
 authRoute.route("/registration").post(createUserControler);
+authRoute.route("/login").post(logInControler);
+authRoute.route("/otp").post(MatchOTPcontroler);
 
 module.exports = authRoute;
